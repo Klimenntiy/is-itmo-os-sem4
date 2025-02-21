@@ -1,5 +1,7 @@
 #!/bin/bash
 
-> info.log
-
-awk '/info:/' /var/log/installer/syslog > info.log
+touch info.log
+awk '{
+  if ($2 == "INFO")
+    print $0
+  }' /var/log/anaconda/syslog >info.log
