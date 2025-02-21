@@ -1,9 +1,9 @@
 #!/bin/bash
 megaStr=""
-read  str
+read str
 while [ "$str" != "q" ]; do
 	megaStr+="${str}"
-	read  str
+	read str
 done
 
 echo $megaStr
