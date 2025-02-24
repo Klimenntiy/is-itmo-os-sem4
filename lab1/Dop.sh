@@ -13,8 +13,7 @@ case $command in
     links;;
   4)
     echo "Exit"
-    exit 0
-    ;;
+    exit 0;;
   *)
     echo "Invalid choice";;
 esac
