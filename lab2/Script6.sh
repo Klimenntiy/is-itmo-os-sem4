@@ -1,7 +1,5 @@
 #!/bin/bash
 
-echo "Finding process with the highest memory usage..."
-
 maxMem=0
 maxPid=0
 maxName=""
