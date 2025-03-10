@@ -3,21 +3,18 @@
 output_file="output.txt"
 > "$output_file"
 
-for pid_path in /proc/[0-9]*; do
-    pid=$(basename "$pid_path")
+for pid in $(ls /proc | grep -E '^[0-9]+$'); do
+    if [[ -f "/proc/$pid/stat" ]]; then
+        ppid=$(awk '{print $4}' /proc/$pid/stat)
+        utime=$(awk '{print $14}' /proc/$pid/stat)
+        stime=$(awk '{print $15}' /proc/$pid/stat)
+        switches=$(awk '{print $40}' /proc/$pid/stat)
 
-    if [[ "$pid" =~ ^[0-9]+$ ]] && [[ -d /proc/$pid ]]; then
-        if [[ -f /proc/$pid/status && -f /proc/$pid/sched ]]; then
-            ppid=$(awk '/^PPid/ {print $2}' /proc/$pid/status)
-            sum_exec_runtime=$(awk '/^sum_exec_runtime/ {print $2}' /proc/$pid/sched)
-            nr_switches=$(awk '/^nr_switches/ {print $2}' /proc/$pid/sched)
+        total_time=$((utime + stime))
 
-            echo "PID=$pid, PPID=$ppid, sum_exec_runtime=$sum_exec_runtime, nr_switches=$nr_switches"  # Лог
-
-            if [[ -n "$sum_exec_runtime" && -n "$nr_switches" && "$nr_switches" -gt 0 ]]; then
-                art=$(echo "scale=6; $sum_exec_runtime / $nr_switches" | bc)
-                echo "ProcessID=$pid : Parent_ProcessID=$ppid : Average_Running_Time=$art" >> "$output_file"
-            fi
+        if [[ "$switches" -gt 0 ]]; then
+            art=$(echo "scale=6; $total_time / $switches" | bc)
+            echo "ProcessID=$pid : Parent_ProcessID=$ppid : Average_Running_Time=$art" >> "$output_file"
         fi
     fi
 done
