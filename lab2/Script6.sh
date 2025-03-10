@@ -29,6 +29,3 @@ if [[ "$maxPid" -ne 0 ]]; then
 else
     echo "No valid process found."
 fi
-
-echo -e "\nTop processes by memory usage (from top command):"
-top -b -o +%MEM | head -n 15
