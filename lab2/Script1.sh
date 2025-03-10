@@ -1,5 +1,5 @@
 #!/bin/bash
-USER="user"
+USER="klimenntiy"
 OUTPUT="output.txt"
 
 ps -u $USER --no-header | wc -l > $OUTPUT
