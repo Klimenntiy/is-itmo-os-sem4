@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo "Collecting disk read statistics for 1 minute..."
 
 declare -A start_reads
 
@@ -23,12 +24,17 @@ for pid in "${!start_reads[@]}"; do
 
         if [[ "$read_diff" -gt 0 ]]; then
             cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
+            [[ -z "$cmdline" ]] && cmdline="[Unknown Command]"
             read_diffs["$pid"]="$read_diff:$cmdline"
         fi
     fi
 done
 
-echo -e "\nTop 3 processes by disk read (bytes read in 1 minute):"
-for entry in $(printf "%s\n" "${!read_diffs[@]}" | awk -F: '{print $1}' | xargs -I {} echo "{}:${read_diffs[{}]}" | sort -t: -k2,2nr | head -n 3); do
-    echo "$entry"
-done
+if [[ ${#read_diffs[@]} -eq 0 ]]; then
+    echo "No processes performed significant disk reads."
+    exit 0
+fi
+
+printf "%s\n" "${!read_diffs[@]}" | while read -r pid; do
+    echo "$pid:${read_diffs[$pid]}"
+done | sort -t: -k2,2nr | head -n 3
