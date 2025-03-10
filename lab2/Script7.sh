@@ -1,40 +1,47 @@
 #!/bin/bash
 
-echo "Collecting disk read statistics for 1 minute..."
+declare -A bytesRead
 
-declare -A start_reads
+for pid in $(ls /proc | grep -E '^[0-9]+$'); do
+	io_file="/proc/$pid/io"
 
-for pid in /proc/[0-9]*; do
-    pid=$(basename "$pid")
-    if [[ -r "/proc/$pid/io" ]]; then
-        read_bytes=$(awk '/^read_bytes/ {print $2}' "/proc/$pid/io")
-        start_reads[$pid]=$read_bytes
-    fi
+	if [ -f "$io_file" ]; then
+		bytes_read=$(grep "read_bytes" "$io_file" | awk '{print $2}')
+		bytesRead["$pid"]=$bytes_read
+	fi
 done
 
 sleep 60
 
-declare -A read_diffs
+for pid in $(ls /proc | grep -E '^[0-9]+$'); do
+	io_file="/proc/$pid/io"
 
-for pid in "${!start_reads[@]}"; do
-    if [[ -r "/proc/$pid/io" && -r "/proc/$pid/cmdline" ]]; then
-        end_read=$(awk '/^read_bytes/ {print $2}' "/proc/$pid/io")
-        start_read=${start_reads[$pid]}
-        read_diff=$((end_read - start_read))
-
-        if [[ "$read_diff" -gt 0 ]]; then
-            cmdline=$(tr '\0' ' ' < "/proc/$pid/cmdline")
-            [[ -z "$cmdline" ]] && cmdline="[Unknown Command]"
-            read_diffs["$pid"]="$read_diff:$cmdline"
-        fi
-    fi
+	if [ -f "$io_file" ]; then
+		bytes_read=$(grep "read_bytes" "$io_file" | awk '{print $2}')
+		current_bytes=${bytesRead["$pid"]}
+		bytesRead["$pid"]=$((current_bytes - bytes_read))
+	fi
 done
 
-if [[ ${#read_diffs[@]} -eq 0 ]]; then
-    echo "No processes performed significant disk reads."
-    exit 0
-fi
+sorted=($(for key in "${!bytesRead[@]}"; do
+	echo "$key ${bytesRead[$key]}"
+done | sort -rn -k2))
 
-printf "%s\n" "${!read_diffs[@]}" | while read -r pid; do
-    echo "$pid:${read_diffs[$pid]}"
-done | sort -t: -k2,2nr | head -n 3
+count=0
+for entry in "${sorted[@]}"; do
+	pid=$(echo $entry | awk '{print $1}')
+	bytes_read=${bytesRead[$pid]}
+	if [ ! -f "/proc/$pid/cmdline" ]; then
+		continue
+	fi
+	cmdline=$(tr -d '\0' <"/proc/$pid/cmdline")
+
+	if [ ! -z "$cmdline" ]; then
+		echo "$pid:$cmdline:$bytes_read"
+		((count++))
+	fi
+
+	if [ $count -eq 3 ]; then
+		break
+	fi
+done
