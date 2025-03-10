@@ -3,38 +3,39 @@
 output_file="output.txt"
 > "$output_file"
 
-declare -A process_data
-declare -A ppid_counts
-declare -A ppid_sum_arts
+declare -A art_sums
+declare -A art_counts
+declare -A art_lines
 
-for pid_path in /proc/[0-9]*; do
-    pid=$(basename "$pid_path")
+for pid in $(ls /proc | grep -E '^[0-9]+$'); do
+    if [[ -f "/proc/$pid/stat" ]]; then
+        ppid=$(awk '{print $4}' /proc/$pid/stat)
+        utime=$(awk '{print $14}' /proc/$pid/stat)
+        stime=$(awk '{print $15}' /proc/$pid/stat)
+        switches=$(awk '{print $40}' /proc/$pid/stat)
 
-    if [[ "$pid" =~ ^[0-9]+$ ]] && [[ -d "/proc/$pid" ]]; then
-        if [[ -f "/proc/$pid/status" && -f "/proc/$pid/sched" ]]; then
-            ppid=$(awk '/^PPid/ {print $2}' "/proc/$pid/status")
-            sum_exec_runtime=$(awk '/^sum_exec_runtime/ {print $2}' "/proc/$pid/sched")
-            nr_switches=$(awk '/^nr_switches/ {print $2}' "/proc/$pid/sched")
+        total_time=$((utime + stime))
 
-            if [[ -n "$sum_exec_runtime" && -n "$nr_switches" && "$nr_switches" -gt 0 ]]; then
-                art=$(echo "scale=6; $sum_exec_runtime / $nr_switches" | bc)
-                process_data["$ppid"]+="$pid $art"$'\n'
-                ppid_sum_arts["$ppid"]=$(echo "${ppid_sum_arts[$ppid]} + $art" | bc)
-                ppid_counts["$ppid"]=$((ppid_counts["$ppid"] + 1))
-            fi
+        if [[ "$switches" -gt 0 ]]; then
+            art=$(echo "scale=6; $total_time / $switches" | bc)
+            line="ProcessID=$pid : Parent_ProcessID=$ppid : Average_Running_Time=$art"
+            art_lines["$ppid"]+="$line"$'\n'
+            art_sums["$ppid"]=$(echo "${art_sums[$ppid]} + $art" | bc) 
+            art_counts["$ppid"]=$((art_counts["$ppid"] + 1))
         fi
     fi
 done
 
-for ppid in "${!process_data[@]}"; do
-    echo -e "${process_data[$ppid]}" | sort -t: -k2,2n >> "$output_file"
-
-    if [[ ${ppid_counts["$ppid"]} -gt 0 ]]; then
-        avg_art=$(echo "${ppid_sum_arts[$ppid]} / ${ppid_counts[$ppid]}" | bc -l)
+for ppid in "${!art_sums[@]}"; do
+    if [[ ${art_counts[$ppid]} -gt 0 ]]; then
+        avg_art=$(echo "scale=6; ${art_sums[$ppid]} / ${art_counts[$ppid]}" | bc)
         echo "Average_Running_Children_of_ParentID=$ppid is $avg_art" >> "$output_file"
+        echo -e "${art_lines[$ppid]}" >> "$output_file"
     fi
 done
 
-if [[ ! -s "$output_file" ]]; then
+if [[ -s "$output_file" ]]; then
+    sort -t: -k2,2n "$output_file" -o "$output_file"
+else
     echo "No data to sort."
 fi
