@@ -1,8 +1,8 @@
 #!/bin/bash
 
 HOME_DIR="$HOME"
-TEST_DIR="$HOME_DIR/test"
-REPORT_FILE="$HOME_DIR/report"
+TEST_DIR="$HOME/test"
+REPORT_FILE="$HOME/report"
 
 mkdir -p "$TEST_DIR"
 
