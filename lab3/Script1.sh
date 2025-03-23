@@ -14,3 +14,5 @@ touch "$TEST_DIR/$TIMESTAMP"
 ping -c 1 www.net_nikogo.ru >/dev/null 2>&1
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") Host unreachable error" >> "$REPORT_FILE"
+
+echo "Script execution started at $(date)" >> /home/klimenntiy/report
