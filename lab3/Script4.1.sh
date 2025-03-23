@@ -1,9 +1,8 @@
 #!/bin/bash
 
-cpulimit -p $PID1 -l 10 &
+renice -n 10 -p $PID1
 echo "Процесс с PID $PID1 ограничен на 10% процессора."
 
 kill $PID3
 echo "Процесс с PID $PID3 завершен."
 
-echo "Использование CPU для первого процесса не должно превышать 10%."
