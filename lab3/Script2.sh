@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "bash /home/klimenntiy/is-itmo-os-sem4/lab3/script1.sh" | at now + 20 seconds
+echo "bash /home/klimenntiy/is-itmo-os-sem4/lab3/script1.sh" | at $(date -d "+20 seconds" +"%H:%M")
 
 sleep 5
 
