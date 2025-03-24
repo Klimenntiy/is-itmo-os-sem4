@@ -4,7 +4,7 @@ PIPE="game_pipe"
 [[ -p $PIPE ]] || mkfifo $PIPE
 
 while true; do
-    sleep 1
+    sleep 10
     choice=$(shuf -n1 -e Rock Scissors Paper)
     echo "Игрок 1: $choice"
     echo "1 $choice" > $PIPE
