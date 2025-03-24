@@ -2,6 +2,7 @@
 
 PIPE="game_pipe"
 
+# Удаляем старый именованный канал, если он есть, и создаем новый
 rm -f $PIPE
 mkfifo $PIPE
 
@@ -20,13 +21,22 @@ declare -A rules=(
 echo "Waiting for players to join..."
 
 while [[ $player1_score -lt 3 && $player2_score -lt 3 ]]; do
-    if ! read -t 5 p1_id p1_choice < $PIPE; then
-        echo "No input from players. Waiting..."
-        continue
-    fi
+    p1_choice=""
+    p2_choice=""
+=
+    while [[ -z $p1_choice ]]; do
+        if read -t 10 p1_id p1_choice < $PIPE; then
+            echo "Player 1 chose: $p1_choice"
+        else
+            echo "No move from Player 1. Waiting..."
+        fi
+    done
 
-    echo "Player 1 chose: $p1_choice"
-    echo "Player 2 chose: $p2_choice"
+    while [[ -z $p2_choice ]]; do
+        if read p2_id p2_choice < $PIPE; then
+            echo "Player 2 chose: $p2_choice"
+        fi
+    done
 
     if [[ $p1_choice == $p2_choice ]]; then
         echo "It's a tie!"
@@ -48,4 +58,4 @@ else
     echo "Player 2 wins the match!"
 fi
 
-rm -f $PIPE
+rm -f $PIPE 
