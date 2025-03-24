@@ -7,13 +7,13 @@ multiply_numbers() {
     done
 }
 
-nice -n 10 multiply_numbers &
-PID1=$!            
+nice -n 10 multiply_numbers & 
+PID1=$!           
 
-nice -n 10 multiply_numbers &  
+nice -n 10 multiply_numbers &
 PID2=$!           
 
 nice -n 10 multiply_numbers & 
-PID3=$!             
+PID3=$!            
 
 echo "Процессы запущены с PID: $PID1, $PID2, $PID3"
