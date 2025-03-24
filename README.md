@@ -4,3 +4,5 @@
 
 [OS_Lab2 .pdf](https://github.com/user-attachments/files/19251583/OS_Lab2.1.pdf)
 
+
+[OS_Lab3.pdf](https://github.com/user-attachments/files/19413082/OS_Lab3.pdf)
