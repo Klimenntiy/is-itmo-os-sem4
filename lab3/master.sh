@@ -25,11 +25,6 @@ while [[ $player1_score -lt 3 && $player2_score -lt 3 ]]; do
         continue
     fi
 
-    if ! read -t 5 p2_id p2_choice < $PIPE; then
-        echo "Only one player moved. Waiting for the second player..."
-        continue
-    fi
-
     echo "Player 1 chose: $p1_choice"
     echo "Player 2 chose: $p2_choice"
 
