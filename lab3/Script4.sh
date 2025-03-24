@@ -1,19 +1,21 @@
 #!/bin/bash
 
-multiply_numbers() {
-    while true
-    do
-        echo $((2 * 2)) > /dev/null
-    done
-}
+echo "#!/bin/bash
+while true
+do
+    echo \$((2 * 2)) > /dev/null
+done" > /tmp/multiply_numbers.sh
 
-nice -n 10 multiply_numbers & 
-PID1=$!           
 
-nice -n 10 multiply_numbers &
-PID2=$!           
+chmod +x /tmp/multiply_numbers.sh
 
-nice -n 10 multiply_numbers & 
+nice -n 10 /tmp/multiply_numbers.sh &  
+PID1=$!             
+
+nice -n 10 /tmp/multiply_numbers.sh & 
+PID2=$!             
+
+nice -n 10 /tmp/multiply_numbers.sh &  
 PID3=$!            
 
 echo "Процессы запущены с PID: $PID1, $PID2, $PID3"
