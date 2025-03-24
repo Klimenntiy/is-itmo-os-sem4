@@ -25,7 +25,7 @@ while [[ $player1_score -lt 3 && $player2_score -lt 3 ]]; do
     p2_choice=""
     
     while [[ -z $p1_choice ]]; do
-        if read -t 10 p1_id p1_choice < $PIPE; then
+        if read -t 5 p1_id p1_choice < $PIPE; then
             echo "Player 1 chose: $p1_choice"
         else
             echo "No move from Player 1. Waiting..."
