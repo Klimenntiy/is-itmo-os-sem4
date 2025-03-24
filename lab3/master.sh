@@ -23,7 +23,7 @@ echo "Waiting for players to join..."
 while [[ $player1_score -lt 3 && $player2_score -lt 3 ]]; do
     p1_choice=""
     p2_choice=""
-=
+    
     while [[ -z $p1_choice ]]; do
         if read -t 10 p1_id p1_choice < $PIPE; then
             echo "Player 1 chose: $p1_choice"
