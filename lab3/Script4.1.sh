@@ -7,7 +7,7 @@ PID3=$(cat /tmp/pid3.txt)
 if ps -p $PID1 > /dev/null
 then
     echo "Процесс с PID $PID1 найден."
-    renice -n 10 -p $PID1
+    renice -n 19 -p $PID1
     echo "Приоритет процесса с PID $PID1 снижен до 10."
 else
     echo "Процесс с PID $PID1 не найден."
