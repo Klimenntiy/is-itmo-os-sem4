@@ -44,18 +44,18 @@ while [[ $player1_score -lt 3 && $player2_score -lt 3 ]]; do
         winner=${rules["$p1_choice-$p2_choice"]}
         if [[ $winner -eq 1 ]]; then
             ((player1_score++))
-            echo "Player 1 wins! Score: $player1_score - $player2_score"
+            echo "Player 1 wins Score: $player1_score - $player2_score"
         else
             ((player2_score++))
-            echo "Player 2 wins! Score: $player1_score - $player2_score"
+            echo "Player 2 wins Score: $player1_score - $player2_score"
         fi
     fi
 done
 
 if [[ $player1_score -eq 3 ]]; then
-    echo "Player 1 wins the match!"
+    echo "Player 1 wins the match"
 else
-    echo "Player 2 wins the match!"
+    echo "Player 2 wins the match"
 fi
 
 rm -f $PIPE 
