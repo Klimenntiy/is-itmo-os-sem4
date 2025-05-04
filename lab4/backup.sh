@@ -52,11 +52,15 @@ else
             cp "$FILE" "$DEST"
             echo "$BASENAME" >> "$REPORT_FILE"
         else
-            SRC_SIZE=$(stat -c%s "$FILE")
-            DST_SIZE=$(stat -c%s "$DEST")
+            if ! cmp -s "$FILE" "$DEST"; then
+                VERSION=1
+                NEW_DEST="$DEST.$TODAY.$VERSION"
+                while [ -f "$NEW_DEST" ]; do
+                    VERSION=$((VERSION + 1))
+                    NEW_DEST="$DEST.$TODAY.$VERSION"
+                done
 
-            if [ "$SRC_SIZE" -ne "$DST_SIZE" ]; then
-                mv "$DEST" "$DEST.$TODAY"
+                mv "$DEST" "$NEW_DEST"
                 cp "$FILE" "$DEST"
                 echo "$BASENAME $BASENAME.$TODAY" >> "$REPORT_FILE"
             fi
