@@ -1,77 +1,40 @@
-#!/bin/bash
+#!/usr/bin/bash
 
-SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-SOURCE_DIR="$SCRIPT_DIR/source"
-BACKUP_ROOT="$SCRIPT_DIR"
-REPORT_FILE="$SCRIPT_DIR/backup-report"
-TODAY=$(date +%F)
+current_date=$(date +%Y-%m-%d)
+backup_root="$(dirname "$(realpath "$0")")"   
+source_dir="$backup_root/source"              
+backup_dir="$backup_root/Backup-$current_date"  
+backup_report="$backup_root/backup-report"    
 
-if [ ! -d "$SOURCE_DIR" ]; then
-    mkdir "$SOURCE_DIR"
-    echo "test content 1" > "$SOURCE_DIR/file1.txt"
-    echo "test content 2" > "$SOURCE_DIR/file2.txt"
-    echo "[INFO] Created source/ and added test files."
+if [ ! -d "$source_dir" ]; then
+    echo "[ERROR] Исходная папка не найдена: $source_dir"
+    exit 1
 fi
 
-LATEST_BACKUP=""
-for dir in "$BACKUP_ROOT"/Backup-*; do
-    [ -d "$dir" ] || continue
-    DATE_PART=${dir##*-}
-    if [[ $DATE_PART =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-        DIFF=$(( ($(date +%s) - $(date -d "$DATE_PART" +%s)) / 86400 ))
-        if [ "$DIFF" -lt 7 ]; then
-            LATEST_BACKUP="$dir"
-            break
-        fi
-    fi
-done
+if [ ! -d "$backup_dir" ]; then
+    mkdir -p "$backup_dir"
+    echo "Создан новый каталог бекапа: $backup_dir на $(date)" >>"$backup_report"
 
-if [ -z "$LATEST_BACKUP" ]; then
-    BACKUP_DIR="$BACKUP_ROOT/Backup-$TODAY"
-
-    if [ -d "$BACKUP_DIR" ]; then
-        echo "Backup directory $BACKUP_DIR already exists. Skipping directory creation."
-    else
-        mkdir "$BACKUP_DIR"
-        echo "[$TODAY] Backup directory created: $BACKUP_DIR" >> "$REPORT_FILE"
-    fi
-
-    cp "$SOURCE_DIR"/* "$BACKUP_DIR"/ 2>/dev/null
-
-    {
-        echo "Files copied:"
-        ls "$SOURCE_DIR"
-        echo
-    } >> "$REPORT_FILE"
+    cp "$source_dir"/* "$backup_dir/"
+    echo "Копированы файлы:" >>"$backup_report"
+    for file in "$backup_dir"/*; do
+        echo "$file" >>"$backup_report"
+    done
 else
-    BACKUP_DIR="$LATEST_BACKUP"
-    {
-        echo "[$TODAY] Updated existing backup: $BACKUP_DIR"
-    } >> "$REPORT_FILE"
+    for file in "$source_dir"/*; do
+        file_name=$(basename "$file")
+        backup_file="$backup_dir/$file_name"
 
-    for FILE in "$SOURCE_DIR"/*; do
-        BASENAME=$(basename "$FILE")
-        DEST="$BACKUP_DIR/$BASENAME"
-
-        if [ ! -f "$DEST" ]; then
-            cp "$FILE" "$DEST"
-            echo "$BASENAME" >> "$REPORT_FILE"
+        if [ ! -f "$backup_file" ]; then
+            cp "$file" "$backup_dir/"
+            echo "Копирован новый файл: $file_name" >>"$backup_report"
         else
-            if ! cmp -s "$FILE" "$DEST"; then
-                
-                VERSION=1
-                NEW_DEST="$DEST.$TODAY.$VERSION"
-                while [ -f "$NEW_DEST" ]; do
-                    VERSION=$((VERSION + 1))
-                    NEW_DEST="$DEST.$TODAY.$VERSION"
-                done
-
-                
-                mv "$DEST" "$NEW_DEST"
-                cp "$FILE" "$DEST"  
-                echo "$BASENAME => $BASENAME.$TODAY" >> "$REPORT_FILE"
+            if [ "$(stat -c%s "$file")" -ne "$(stat -c%s "$backup_file")" ]; then
+                mv "$backup_file" "$backup_file.$current_date"
+                cp "$file" "$backup_dir/"
+                echo "Обновлен файл: $file_name (старую версию переименовали в $backup_file.$current_date и скопировали новую)" >>"$backup_report"
             fi
         fi
     done
-    echo >> "$REPORT_FILE"
+    echo "Изменения в существующем каталоге бекапа: $backup_dir на $(date)" >>"$backup_report"
 fi
