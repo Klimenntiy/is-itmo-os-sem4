@@ -15,20 +15,21 @@ if [ ! -f "$TRASH_LOG" ]; then
     exit 1
 fi
 
-MATCHES=$(grep "/.*/$TARGET_NAME ->" "$TRASH_LOG")
+mapfile -t MATCHES < <(grep "/.*/$TARGET_NAME ->" "$TRASH_LOG")
 
-if [ -z "$MATCHES" ]; then
+if [ ${#MATCHES[@]} -eq 0 ]; then
     echo "No such file '$TARGET_NAME' found in trash log."
     exit 0
 fi
 
-echo "$MATCHES" | while IFS= read -r LINE; do
+for LINE in "${MATCHES[@]}"; do
     ORIGINAL_PATH=$(echo "$LINE" | cut -d' ' -f1)
     LINK_ID=$(echo "$LINE" | awk '{print $3}')
     TRASH_FILE="$TRASH_DIR/$LINK_ID"
 
     echo "Restore file to: $ORIGINAL_PATH ? [y/n]"
     read -r ANSWER
+
     if [[ "$ANSWER" == "y" || "$ANSWER" == "Y" ]]; then
         DEST_DIR=$(dirname "$ORIGINAL_PATH")
 
