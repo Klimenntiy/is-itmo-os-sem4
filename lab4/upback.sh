@@ -1,8 +1,8 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-RESTORE_DIR="$SCRIPT_DIR/restore"  
-BACKUP_ROOT="$SCRIPT_DIR" 
+RESTORE_DIR="$SCRIPT_DIR/restore"
+BACKUP_ROOT="$SCRIPT_DIR"  
 TODAY=$(date +%F)
 
 echo "Current date: $TODAY" 
@@ -11,11 +11,15 @@ LATEST_BACKUP=""
 echo "Looking for backup directories..."
 for dir in "$BACKUP_ROOT"/Backup-*; do
     [ -d "$dir" ] || continue
-    DATE_PART=${dir##*-} 
-    echo "Found backup directory: $dir (Date: $DATE_PART)"
+    DATE_PART=${dir##*-}  
+    echo "Found backup directory: $dir (Date: $DATE_PART)" 
 
     if [[ $DATE_PART =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-        DIFF=$(( ($(date +%s) - $(date -d "$DATE_PART" +%s)) / 86400 ))  
+        BACKUP_DATE=$(date -d "$DATE_PART" +%s) 
+        CURRENT_DATE=$(date +%s) 
+        DIFF=$(( (CURRENT_DATE - BACKUP_DATE) / 86400 )) 
+        echo "Backup date: $DATE_PART (timestamp: $BACKUP_DATE)"
+        echo "Current date: $TODAY (timestamp: $CURRENT_DATE)"
         echo "Date difference: $DIFF days"  
 
         if [ "$DIFF" -lt 7 ]; then
@@ -38,9 +42,11 @@ else
 
     for FILE in "$LATEST_BACKUP"/*; do
         BASENAME=$(basename "$FILE")
+
         if [[ "$BASENAME" =~ \.[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
             continue
         fi
+
         cp "$FILE" "$RESTORE_DIR/$BASENAME"
         echo "Restored: $BASENAME"
     done
