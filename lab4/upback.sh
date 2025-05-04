@@ -7,25 +7,40 @@ TODAY=$(date +%F)
 
 echo "[INFO] Текущая дата: $TODAY"
 echo "[INFO] Ищем бэкапы в директории: $BACKUP_ROOT"
-echo "[INFO] Список каталогов Backup-*:"
-ls -d "$BACKUP_ROOT"/Backup-* 2>/dev/null || echo "[WARNING] Ни одного каталога не найдено"
+
+# Получаем список каталогов Backup-*
+BACKUP_DIRS=$(ls -d "$BACKUP_ROOT"/Backup-* 2>/dev/null)
+if [ -z "$BACKUP_DIRS" ]; then
+    echo "[ERROR] Ни одного каталога Backup-* не найдено."
+    exit 1
+else
+    echo "[INFO] Найдены каталоги бэкапов:"
+    echo "$BACKUP_DIRS"
+fi
 
 LATEST_BACKUP=""
 LATEST_DATE=0
 
-for dir in "$BACKUP_ROOT"/Backup-*; do
+for dir in $BACKUP_DIRS; do
     [ -d "$dir" ] || continue
     BASENAME=$(basename "$dir")
-    DATE_PART=${BASENAME##*-}
+    DATE_PART=${BASENAME#Backup-}
 
+    # Проверяем формат даты (YYYY-MM-DD)
     if [[ $DATE_PART =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
-        BACKUP_DATE=$(date -d "$DATE_PART" +%s)
+        # Пытаемся преобразовать дату в секунды
+        BACKUP_DATE=$(date -d "$DATE_PART" +%s 2>/dev/null)
+        if [ -z "$BACKUP_DATE" ]; then
+            echo "[WARNING] Не удалось распознать дату в каталоге: $dir"
+            continue
+        fi
+
         CURRENT_DATE=$(date +%s)
-        DIFF=$(( (CURRENT_DATE - BACKUP_DATE) / 86400 ))
+        DIFF_DAYS=$(( (CURRENT_DATE - BACKUP_DATE) / 86400 ))
 
-        echo "[DEBUG] Проверяется: $dir | Дата: $DATE_PART | Разница: $DIFF дней"
+        echo "[DEBUG] Проверяем: $dir | Дата: $DATE_PART | Разница: $DIFF_DAYS дней"
 
-        if [ "$DIFF" -lt 7 ] && [ "$BACKUP_DATE" -gt "$LATEST_DATE" ]; then
+        if [ "$DIFF_DAYS" -lt 7 ] && [ "$BACKUP_DATE" -gt "$LATEST_DATE" ]; then
             LATEST_BACKUP="$dir"
             LATEST_DATE=$BACKUP_DATE
         fi
@@ -41,29 +56,29 @@ else
     echo "[INFO] Найден актуальный бэкап: $LATEST_BACKUP"
 fi
 
-# Создаём restore/
-if [ ! -d "$RESTORE_DIR" ]; then
-    mkdir "$RESTORE_DIR"
-    echo "[INFO] Создан каталог восстановления: $RESTORE_DIR"
-else
-    echo "[INFO] Каталог восстановления уже существует: $RESTORE_DIR"
-fi
+# Создаём каталог restore, если его нет
+mkdir -p "$RESTORE_DIR"
+echo "[INFO] Каталог восстановления: $RESTORE_DIR"
 
-# Копируем файлы без версий
+# Восстанавливаем файлы (без версионных копий)
+RESTORED_COUNT=0
 for FILE in "$LATEST_BACKUP"/*; do
+    [ -f "$FILE" ] || continue
     BASENAME=$(basename "$FILE")
 
-    if [[ "$BASENAME" =~ \.[0-9]{4}-[0-9]{2}-[0-9]{2}(\.[0-9]+)?$ ]]; then
+    # Пропускаем файлы с датами в имени (версионные копии)
+    if [[ "$BASENAME" =~ \.[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]]; then
         echo "[SKIP] Пропущен версионный файл: $BASENAME"
         continue
     fi
 
     if [ -f "$RESTORE_DIR/$BASENAME" ]; then
-        echo "[SKIP] Уже существует в restore/: $BASENAME"
+        echo "[SKIP] Файл уже существует в restore/: $BASENAME"
     else
         cp "$FILE" "$RESTORE_DIR/$BASENAME"
-        echo "[RESTORED] Восстановлен файл: $BASENAME"
+        echo "[RESTORED] Восстановлен: $BASENAME"
+        ((RESTORED_COUNT++))
     fi
 done
 
-echo "[DONE] Восстановление завершено."
+echo "[DONE] Восстановление завершено. Всего файлов: $RESTORED_COUNT"
