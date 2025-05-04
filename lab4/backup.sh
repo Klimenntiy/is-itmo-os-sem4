@@ -58,6 +58,7 @@ else
             echo "$BASENAME" >> "$REPORT_FILE"
         else
             if ! cmp -s "$FILE" "$DEST"; then
+                
                 VERSION=1
                 NEW_DEST="$DEST.$TODAY.$VERSION"
                 while [ -f "$NEW_DEST" ]; do
@@ -65,9 +66,10 @@ else
                     NEW_DEST="$DEST.$TODAY.$VERSION"
                 done
 
+                
                 mv "$DEST" "$NEW_DEST"
-                cp "$FILE" "$DEST"
-                echo "$BASENAME $BASENAME.$TODAY" >> "$REPORT_FILE"
+                cp "$FILE" "$DEST"  
+                echo "$BASENAME => $BASENAME.$TODAY" >> "$REPORT_FILE"
             fi
         fi
     done
