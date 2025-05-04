@@ -28,12 +28,17 @@ done
 
 if [ -z "$LATEST_BACKUP" ]; then
     BACKUP_DIR="$BACKUP_ROOT/Backup-$TODAY"
-    mkdir "$BACKUP_DIR"
+
+    if [ -d "$BACKUP_DIR" ]; then
+        echo "Backup directory $BACKUP_DIR already exists. Skipping directory creation."
+    else
+        mkdir "$BACKUP_DIR"
+        echo "[$TODAY] Backup directory created: $BACKUP_DIR" >> "$REPORT_FILE"
+    fi
 
     cp "$SOURCE_DIR"/* "$BACKUP_DIR"/ 2>/dev/null
 
     {
-        echo "[$TODAY] Backup directory created: $BACKUP_DIR"
         echo "Files copied:"
         ls "$SOURCE_DIR"
         echo
