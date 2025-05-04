@@ -1,10 +1,17 @@
 #!/bin/bash
 
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
-SOURCE_DIR="$SCRIPT_DIR"
+SOURCE_DIR="$SCRIPT_DIR/source"
 BACKUP_ROOT="$SCRIPT_DIR"
 REPORT_FILE="$SCRIPT_DIR/backup-report"
+TODAY=$(date +%F)
 
+if [ ! -d "$SOURCE_DIR" ]; then
+    mkdir "$SOURCE_DIR"
+    echo "test content 1" > "$SOURCE_DIR/file1.txt"
+    echo "test content 2" > "$SOURCE_DIR/file2.txt"
+    echo "[INFO] Created source/ and added test files."
+fi
 
 LATEST_BACKUP=""
 for dir in "$BACKUP_ROOT"/Backup-*; do
@@ -22,7 +29,8 @@ done
 if [ -z "$LATEST_BACKUP" ]; then
     BACKUP_DIR="$BACKUP_ROOT/Backup-$TODAY"
     mkdir "$BACKUP_DIR"
-    cp -r "$SOURCE_DIR"/* "$BACKUP_DIR"/
+
+    cp "$SOURCE_DIR"/* "$BACKUP_DIR"/ 2>/dev/null
 
     {
         echo "[$TODAY] Backup directory created: $BACKUP_DIR"
