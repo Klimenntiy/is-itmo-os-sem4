@@ -1,3 +1,3 @@
-cp mem.bash mem2.bash
-sed -i 's/report.log/report2.log/' mem2.bash
-chmod +x mem2.bash
+cp mem.sh mem2.sh
+sed -i 's/report.log/report2.log/' mem2.sh
+chmod +x mem2.sh
