@@ -1,3 +1,3 @@
 #!/bin/bash
-./mem.bash &
-./mem2.bash &
+./mem.sh &
+./mem2.sh &
