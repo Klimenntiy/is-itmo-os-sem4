@@ -1,3 +1,15 @@
-cp mem.sh mem2.sh
-sed -i 's/report.log/report2.log/' mem2.sh
-chmod +x mem2.sh
+#!/bin/bash
+
+: > report2.log
+
+arr=()
+step=0
+
+while true; do
+    arr+=({1..10})
+    ((step++))
+
+    if (( step % 100000 == 0 )); then
+        echo "${#arr[@]}" >> report2.log
+    fi
+done
