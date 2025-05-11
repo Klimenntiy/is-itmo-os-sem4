@@ -11,50 +11,52 @@ TRASH_DIR="$HOME/.trash"
 TRASH_LOG="$HOME/.trash.log"
 
 if [ ! -f "$TRASH_LOG" ]; then
-    echo "Error: trash log not found" >&2
+    echo "Error: Trash log not found at $TRASH_LOG" >&2
     exit 1
 fi
 
-TARGET_NAME="$1"
-FOUND=0
-
 while IFS= read -r LINE; do
-    if [[ "$LINE" =~ \'(.*)\'\ -\>\ ([0-9.]+)$ ]]; then
+    [ -z "$LINE" ] && continue
+    
+    if [[ "$LINE" =~ ^\'(.*)\'\ -\>\ ([0-9.]+)$ ]]; then
         FILE="${BASH_REMATCH[1]}"
         ID="${BASH_REMATCH[2]}"
-        if [ "$(basename "$FILE")" = "$TARGET_NAME" ]; then
-            FOUND=1
-            TRASH_FILE="$TRASH_DIR/$ID"
+        
+        if [ "$(basename "$FILE")" = "$1" ]; then
+            echo "Found: $FILE (ID: $ID)"
             
-            if [ ! -f "$TRASH_FILE" ]; then
-                echo "Warning: File exists in log but not in trash (ID: $ID)" >&2
+            if [ ! -f "$TRASH_DIR/$ID" ]; then
+                echo "Error: File missing in trash (ID: $ID)" >&2
                 continue
             fi
-
-            read -rp "Restore '$TARGET_NAME' to $SOURCE_DIR/? [y/n] " ANSWER
+            
+            if [ "$AUTO_CONFIRM" = "y" ]; then
+                ANSWER="y"
+            else
+                read -rp "Restore to $SOURCE_DIR/? [y/n] " ANSWER
+            fi
+            
             if [[ "$ANSWER" =~ ^[yY] ]]; then
-                if [ -e "$SOURCE_DIR/$TARGET_NAME" ]; then
-                    read -rp "File exists. Enter new name: " NEW_NAME
-                    RESTORE_PATH="$SOURCE_DIR/$NEW_NAME"
-                else
-                    RESTORE_PATH="$SOURCE_DIR/$TARGET_NAME"
-                fi
-
-                if ln -- "$TRASH_FILE" "$RESTORE_PATH"; then
-                    rm -f "$TRASH_FILE"
+                mkdir -p "$SOURCE_DIR" || {
+                    echo "Error: Can't create $SOURCE_DIR" >&2
+                    exit 1
+                }
+                
+                if ln -- "$TRASH_DIR/$ID" "$SOURCE_DIR/$1" 2>/dev/null; then
+                    rm -f "$TRASH_DIR/$ID"
+                    # Атомарное обновление лога
                     grep -vF "$LINE" "$TRASH_LOG" > "$TRASH_LOG.tmp" && \
                     mv "$TRASH_LOG.tmp" "$TRASH_LOG"
-                    echo "Successfully restored to $RESTORE_PATH"
+                    echo "Successfully restored to $SOURCE_DIR/$1"
                     exit 0
                 else
-                    echo "Error: Failed to restore (check permissions)" >&2
+                    echo "Error: Restore failed (check permissions/space?)" >&2
+                    exit 1
                 fi
             fi
         fi
     fi
-done < "$TRASH_LOG"
+done < <(grep -a "$1" "$TRASH_LOG")
 
-if [ $FOUND -eq 0 ]; then
-    echo "Error: File '$TARGET_NAME' not found in trash log" >&2
-fi
+echo "Error: File '$1' not found in trash log" >&2
 exit 1
