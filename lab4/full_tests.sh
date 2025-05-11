@@ -1,47 +1,65 @@
 #!/bin/bash
 
-SCRIPT_DIR="$(dirname "$(realpath "$0")")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG="$SCRIPT_DIR/test-log.txt"
 SOURCE_DIR="$SCRIPT_DIR/source"
 RESTORE_DIR="$SCRIPT_DIR/restore"
 
 echo "===== FULL TEST STARTED =====" > "$LOG"
-echo "[1] Создание тестовых файлов..." | tee -a "$LOG"
-"$SCRIPT_DIR/create_test_files.sh" >> "$LOG" 2>&1
+echo "[1] Creating test files..." | tee -a "$LOG"
+"$SCRIPT_DIR/create_test_files.sh" >> "$LOG" 2>&1 || {
+    echo "Error creating test files" | tee -a "$LOG"
+    exit 1
+}
 
-echo "[2] Запуск backup.sh..." | tee -a "$LOG"
-"$SCRIPT_DIR/backup.sh" >> "$LOG" 2>&1
+echo "[2] Running backup..." | tee -a "$LOG"
+"$SCRIPT_DIR/backup.sh" >> "$LOG" 2>&1 || {
+    echo "Error during backup" | tee -a "$LOG"
+    exit 1
+}
 
 FILE_TO_DELETE="file with spaces.txt"
-echo "[3] Удаление файла через rmtrash.sh: $FILE_TO_DELETE" | tee -a "$LOG"
-"$SCRIPT_DIR/rmtrash.sh" "$FILE_TO_DELETE" >> "$LOG" 2>&1
+echo "[3] Deleting file: $FILE_TO_DELETE" | tee -a "$LOG"
+"$SCRIPT_DIR/rmtrash.sh" "$FILE_TO_DELETE" >> "$LOG" 2>&1 || {
+    echo "Error deleting file" | tee -a "$LOG"
+    exit 1
+}
 
-echo "[4] Проверка, удалён ли файл..." | tee -a "$LOG"
+echo "[4] Verifying deletion..." | tee -a "$LOG"
 if [ ! -f "$SOURCE_DIR/$FILE_TO_DELETE" ]; then
-  echo "Файл успешно удалён" | tee -a "$LOG"
+    echo "File successfully deleted" | tee -a "$LOG"
 else
-  echo "Файл всё ещё существует!" | tee -a "$LOG"
+    echo "File still exists!" | tee -a "$LOG"
+    exit 1
 fi
 
-echo "[5] Восстановление файла через untrash.sh..." | tee -a "$LOG"
-echo "y" | "$SCRIPT_DIR/untrash.sh" "$FILE_TO_DELETE" >> "$LOG" 2>&1
+echo "[5] Restoring file..." | tee -a "$LOG"
+echo "y" | "$SCRIPT_DIR/untrash.sh" "$FILE_TO_DELETE" >> "$LOG" 2>&1 || {
+    echo "Error restoring file" | tee -a "$LOG"
+    exit 1
+}
 
-echo "[6] Проверка восстановления..." | tee -a "$LOG"
+echo "[6] Verifying restoration..." | tee -a "$LOG"
 if [ -f "$SOURCE_DIR/$FILE_TO_DELETE" ]; then
-  echo "Файл восстановлен в source/" | tee -a "$LOG"
+    echo "File successfully restored" | tee -a "$LOG"
 else
-  echo "Файл не восстановлен!" | tee -a "$LOG"
+    echo "File not restored!" | tee -a "$LOG"
+    exit 1
 fi
 
-echo "[7] Запуск восстановления из последнего бэкапа (upback.sh)..." | tee -a "$LOG"
-"$SCRIPT_DIR/upback.sh" >> "$LOG" 2>&1
+echo "[7] Restoring from backup..." | tee -a "$LOG"
+"$SCRIPT_DIR/upback.sh" >> "$LOG" 2>&1 || {
+    echo "Error restoring from backup" | tee -a "$LOG"
+    exit 1
+}
 
-echo "[8] Проверка restore/ каталога..." | tee -a "$LOG"
+echo "[8] Verifying backup restore..." | tee -a "$LOG"
 if [ -d "$RESTORE_DIR" ] && [ "$(ls -A "$RESTORE_DIR")" ]; then
-  echo "Файлы успешно восстановлены в restore/" | tee -a "$LOG"
+    echo "Backup successfully restored" | tee -a "$LOG"
 else
-  echo "Каталог restore пуст или не создан!" | tee -a "$LOG"
+    echo "Restore directory is empty!" | tee -a "$LOG"
+    exit 1
 fi
 
-echo "===== FULL TEST COMPLETE =====" | tee -a "$LOG"
-echo "Лог сохранён в: $LOG"
+echo "===== TEST COMPLETED SUCCESSFULLY =====" | tee -a "$LOG"
+exit 0
