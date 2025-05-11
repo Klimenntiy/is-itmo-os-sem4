@@ -1,70 +1,63 @@
 #!/bin/bash
 
 if [ $# -ne 1 ]; then
-    echo "Usage: $0 filename"
+    echo "Usage: $0 filename" >&2
     exit 1
 fi
 
 TARGET_NAME="$1"
 TRASH_DIR="$HOME/.trash"
 TRASH_LOG="$HOME/.trash.log"
-TMP_LOG="$HOME/.trash_tmp.log"
+TMP_LOG=$(mktemp) || { echo "Cannot create temp file" >&2; exit 1; }
 
 if [ ! -f "$TRASH_LOG" ]; then
-    echo "Trash log not found."
+    echo "Trash log not found." >&2
     exit 1
 fi
 
-mapfile -t MATCHES < <(grep "/.*/$TARGET_NAME ->" "$TRASH_LOG")
+mapfile -t MATCHES < <(grep -F "/${TARGET_NAME} ->" "$TRASH_LOG")
 
 if [ ${#MATCHES[@]} -eq 0 ]; then
-    echo "No such file '$TARGET_NAME' found in trash log."
+    echo "No such file '$TARGET_NAME' found in trash log." >&2
     exit 0
 fi
 
 for LINE in "${MATCHES[@]}"; do
-    ORIGINAL_PATH=$(echo "$LINE" | cut -d' ' -f1)
-    LINK_ID=$(echo "$LINE" | awk '{print $3}')
+    ORIGINAL_PATH=$(echo "$LINE" | awk -F' -> ' '{print $1}' | sed "s/^'//; s/'$//")
+    LINK_ID=$(echo "$LINE" | awk -F' -> ' '{print $2}')
     TRASH_FILE="$TRASH_DIR/$LINK_ID"
 
-    echo "Restore file to: $ORIGINAL_PATH ? [y/n]"
-    read -r ANSWER
+    if [ ! -e "$TRASH_FILE" ]; then
+        echo "Trash file '$TRASH_FILE' no longer exists. Skipping." >&2
+        continue
+    fi
 
-    if [[ "$ANSWER" == "y" || "$ANSWER" == "Y" ]]; then
+    read -rp "Restore file to: $ORIGINAL_PATH ? [y/n] " ANSWER
+    if [[ "$ANSWER" =~ ^[yY] ]]; then
         DEST_DIR=$(dirname "$ORIGINAL_PATH")
+        mkdir -p "$DEST_DIR" 2>/dev/null
 
-        if [ ! -e "$TRASH_FILE" ]; then
-            echo "Trash file '$TRASH_FILE' no longer exists. Skipping."
-            continue
-        fi
-
-        if [ -d "$DEST_DIR" ]; then
-            if [ -e "$ORIGINAL_PATH" ]; then
-                echo "File '$ORIGINAL_PATH' already exists."
-                echo -n "Enter a new name to restore to (in $DEST_DIR): "
-                read -r NEW_NAME
-                RESTORE_PATH="$DEST_DIR/$NEW_NAME"
-            else
-                RESTORE_PATH="$ORIGINAL_PATH"
-            fi
+        if [ -e "$ORIGINAL_PATH" ]; then
+            read -rp "File '$ORIGINAL_PATH' exists. Enter new name: " NEW_NAME
+            RESTORE_PATH="${DEST_DIR}/${NEW_NAME}"
         else
-            echo "Original directory '$DEST_DIR' does not exist. Restoring to home directory."
-            RESTORE_PATH="$HOME/$TARGET_NAME"
-            if [ -e "$RESTORE_PATH" ]; then
-                echo "File '$RESTORE_PATH' already exists."
-                echo -n "Enter a new name to restore to (in home directory): "
-                read -r NEW_NAME
-                RESTORE_PATH="$HOME/$NEW_NAME"
-            fi
+            RESTORE_PATH="$ORIGINAL_PATH"
         fi
 
-        ln "$TRASH_FILE" "$RESTORE_PATH"
-        if [ $? -eq 0 ]; then
+        mkdir -p "$(dirname "$RESTORE_PATH")" || {
+            echo "Cannot create destination directory" >&2
+            continue
+        }
+
+        if ln "$TRASH_FILE" "$RESTORE_PATH" 2>/dev/null; then
             echo "Restored to '$RESTORE_PATH'"
-            rm "$TRASH_FILE"
+            rm -f "$TRASH_FILE"
             grep -vF "$LINE" "$TRASH_LOG" > "$TMP_LOG" && mv "$TMP_LOG" "$TRASH_LOG"
         else
-            echo "Failed to restore file. Skipping."
+            echo "Failed to restore file. Check permissions." >&2
         fi
     fi
 done
+
+rm -f "$TMP_LOG"
+exit 0
