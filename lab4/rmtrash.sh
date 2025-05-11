@@ -10,6 +10,9 @@ FILENAME="$1"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 FILE_PATH="$SCRIPT_DIR/$FILENAME"
 
+echo "SCRIPT_DIR: $SCRIPT_DIR"
+echo "FILE_PATH: $FILE_PATH"
+
 if [ ! -f "$FILE_PATH" ]; then
     echo "File '$FILENAME' does not exist in the script's directory."
     exit 1
@@ -25,9 +28,8 @@ while [ -e "$TRASH_DIR/$LINK_ID" ]; do
     ((LINK_ID++))
 done
 
-ln "$FILE_PATH" "$TRASH_DIR/$LINK_ID"
-
-rm "$FILE_PATH"
+echo "Moving file '$FILE_PATH' to trash as '$LINK_ID'..."
+mv "$FILE_PATH" "$TRASH_DIR/$LINK_ID"
 
 echo "$FILE_PATH -> $LINK_ID" >> "$TRASH_LOG"
 
