@@ -13,8 +13,8 @@ echo "[2] Запуск backup.sh..." | tee -a "$LOG"
 "$SCRIPT_DIR/backup.sh" >> "$LOG" 2>&1
 
 FILE_TO_DELETE="file with spaces.txt"
-echo "[3] Удаление файла через trash.sh: $FILE_TO_DELETE" | tee -a "$LOG"
-"$SCRIPT_DIR/trash.sh" "$FILE_TO_DELETE" >> "$LOG" 2>&1
+echo "[3] Удаление файла через rmtrash.sh: $FILE_TO_DELETE" | tee -a "$LOG"
+"$SCRIPT_DIR/rmtrash.sh" "$FILE_TO_DELETE" >> "$LOG" 2>&1
 
 echo "[4] Проверка, удалён ли файл..." | tee -a "$LOG"
 if [ ! -f "$SOURCE_DIR/$FILE_TO_DELETE" ]; then
