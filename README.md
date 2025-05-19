@@ -10,3 +10,5 @@
 [OS_Lab4.pdf](https://github.com/user-attachments/files/20025972/OS_Lab4.1.pdf)
 
 [OS_Lab5.pdf](https://github.com/user-attachments/files/20032391/OS_Lab5.pdf)
+
+[OS_Lab6.pdf](https://github.com/user-attachments/files/20282218/OS_Lab6_hard.pdf)
