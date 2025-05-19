@@ -1,9 +1,10 @@
 import matplotlib.pyplot as plt
+import os
 
 def read_results(folder, mode):
     means = []
     for n in range(1, 21):
-        filename = f"{folder}/results_{mode}_{n}.txt"
+        filename = os.path.join(folder, f"results_{mode}_{n}.txt")
         try:
             with open(filename) as f:
                 times = [float(line.strip()) for line in f if line.strip()]
@@ -14,26 +15,22 @@ def read_results(folder, mode):
             means.append(0)
     return means
 
-def plot_mode(mode_name):
+def plot_results(folder):
     x = list(range(1, 21))
-
-    folder_1cpu = "CPU_1"
-    folder_2cpu = "CPU_2"
-
-    data_1cpu = read_results(folder_1cpu, mode_name)
-    data_2cpu = read_results(folder_2cpu, mode_name)
+    seq_data = read_results(folder, "seq")
+    par_data = read_results(folder, "par")
 
     plt.figure(figsize=(10,6))
-    plt.plot(x, data_1cpu, marker='o', label='1 CPU')
-    plt.plot(x, data_2cpu, marker='o', label='2 CPU')
-    plt.title(f"Performance for {mode_name.upper()} mode")
+    plt.plot(x, seq_data, marker='o', label='Sequential')
+    plt.plot(x, par_data, marker='o', label='Parallel')
+    plt.title(f"Performance in folder: {folder}")
     plt.xlabel("Number of tasks (N)")
     plt.ylabel("Average execution time (s)")
     plt.legend()
     plt.grid(True)
-    plt.savefig(f"{mode_name}_performance.png")
+    plt.savefig(f"{folder}_performance.png")
     plt.show()
 
 if __name__ == "__main__":
-    plot_mode("seq")  
-    plot_mode("par") 
+    folder = input("Enter folder name with results: ").strip()
+    plot_results(folder)
