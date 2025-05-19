@@ -5,9 +5,15 @@ def read_results(folder, mode):
     for n in range(1, 21):
         try:
             with open(f"{folder}/{mode}_{n}.txt") as f:
-                times = [float(line.strip()) for line in f.readlines()]
-                means.append(sum(times) / len(times))
+                times = [float(line.strip()) for line in f.readlines() if line.strip()]
+                if times:
+                    mean_time = sum(times) / len(times)
+                else:
+                    mean_time = 0
+                print(f"Read {len(times)} entries from {folder}/{mode}_{n}.txt, mean = {mean_time}")
+                means.append(mean_time)
         except FileNotFoundError:
+            print(f"File not found: {folder}/{mode}_{n}.txt")
             means.append(0)
     return means
 
