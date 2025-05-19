@@ -1,28 +1,33 @@
 import matplotlib.pyplot as plt
 
-def read_results(folder, mode):
+def read_results(prefix, folder, mode):
     means = []
     for n in range(1, 21):
+        # Формируем имя файла по шаблону
+        # Если папка Disk — добавляем 'disk' в имя
+        if folder.lower() == "disk":
+            filename = f"{prefix}_disk_{mode}_{n}.txt"
+        else:
+            filename = f"{prefix}_{mode}_{n}.txt"
+        filepath = f"{folder}/{filename}"
+
         try:
-            with open(f"{folder}/{mode}_{n}.txt") as f:
+            with open(filepath) as f:
                 times = [float(line.strip()) for line in f.readlines() if line.strip()]
-                if times:
-                    mean_time = sum(times) / len(times)
-                else:
-                    mean_time = 0
-                print(f"Read {len(times)} entries from {folder}/{mode}_{n}.txt, mean = {mean_time}")
+                mean_time = sum(times) / len(times) if times else 0
+                print(f"Read {len(times)} entries from {filepath}, mean = {mean_time}")
                 means.append(mean_time)
         except FileNotFoundError:
-            print(f"File not found: {folder}/{mode}_{n}.txt")
+            print(f"File not found: {filepath}")
             means.append(0)
     return means
 
 x = list(range(1, 21))
 
-cpu_seq = read_results("CPU", "seq")
-cpu_par = read_results("CPU", "par")
-disk_seq = read_results("Disk", "seq")
-disk_par = read_results("Disk", "par")
+cpu_seq = read_results("result", "CPU", "seq")
+cpu_par = read_results("result", "CPU", "par")
+disk_seq = read_results("result", "Disk", "seq")
+disk_par = read_results("result", "Disk", "par")
 
 plt.figure(figsize=(12, 8))
 plt.plot(x, cpu_seq, label="CPU Sequential")
