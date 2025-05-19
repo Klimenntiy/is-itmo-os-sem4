@@ -1,6 +1,6 @@
 #!/bin/bash
 N=$1
-MODE=$2 # seq или par
+MODE=$2 
 OUTFILE="results_${MODE}_${N}.txt"
 
 for ((i=1; i<=10; i++)); do
