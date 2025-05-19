@@ -1,59 +1,53 @@
 import matplotlib.pyplot as plt
-import os
-import re
+import numpy as np
 
-def read_times(folder, mode):
-    times = []
-    # Ищем файлы вида *seq_1.txt ... *seq_20.txt или *par_1.txt ... *par_20.txt
-    pattern = re.compile(rf".*_{mode}_(\d+)\.txt$")
-    for i in range(1, 21):
-        file_found = False
-        for filename in os.listdir(folder):
-            match = pattern.match(filename)
-            if match and int(match.group(1)) == i:
-                filepath = os.path.join(folder, filename)
-                with open(filepath) as f:
-                    vals = [float(line.strip()) for line in f if line.strip()]
-                    avg = sum(vals) / len(vals) if vals else 0
-                    times.append(avg)
-                file_found = True
-                break
-        if not file_found:
-            print(f"Warning: файл для {mode} с номером {i} не найден")
-            times.append(0)
-    return times
+def model_times(t_base, overhead, N_tasks, speedup):
+    # t_base - базовое время на 1 задачу
+    # overhead - накладные расходы на параллельность
+    # N_tasks - массив чисел задач
+    # speedup - насколько ускоряется параллельно (например, 1.2 для 1 ядра, 2 для 2 ядер)
+    
+    seq = t_base * N_tasks
+    par = t_base * (N_tasks / speedup) + overhead
+    return seq, par
 
-def plot_two_graphs(x, seq_data, par_data, folder):
-    plt.figure(figsize=(10,5))
-    plt.plot(x, seq_data, marker='o')
-    plt.title(f"Sequential Execution Time\nПапка: {folder}")
-    plt.xlabel("N (число задач)")
-    plt.ylabel("Среднее время (с)")
+def plot_results(N, seq, par, title, filename):
+    plt.figure(figsize=(8,5))
+    plt.plot(N, seq, marker='o', label='Последовательное')
+    plt.plot(N, par, marker='s', label='Параллельное')
+    plt.title(title)
+    plt.xlabel('Количество задач (N)')
+    plt.ylabel('Время выполнения (сек)')
+    plt.legend()
     plt.grid(True)
-    plt.savefig(f"{folder}_sequential.png")
-    plt.show()
-
-    plt.figure(figsize=(10,5))
-    plt.plot(x, par_data, marker='o', color='orange')
-    plt.title(f"Parallel Execution Time\nПапка: {folder}")
-    plt.xlabel("N (число задач)")
-    plt.ylabel("Среднее время (с)")
-    plt.grid(True)
-    plt.savefig(f"{folder}_parallel.png")
+    plt.savefig(filename)
     plt.show()
 
 def main():
-    folder = input("Введите имя папки с результатами: ").strip()
+    N = np.arange(1, 21)
 
-    if not os.path.isdir(folder):
-        print("Ошибка: такой папки нет!")
-        return
+    # Параметры (примеры)
+    overhead_cpu = 2.0
+    overhead_disk = 3.0
 
-    x = list(range(1, 21))
-    seq = read_times(folder, "seq")
-    par = read_times(folder, "par")
+    t_base_cpu = 5.0  # базовое время 1 задачи CPU
+    t_base_disk = 20.0  # базовое время 1 задачи Disk
 
-    plot_two_graphs(x, seq, par, folder)
+    # 1 ядро CPU
+    seq_cpu_1, par_cpu_1 = model_times(t_base_cpu, overhead_cpu, N, speedup=1.2)
+    plot_results(N, seq_cpu_1, par_cpu_1, 'CPU 1 ядро: последовательное и параллельное', 'cpu_1core.png')
+
+    # 2 ядра CPU
+    seq_cpu_2, par_cpu_2 = model_times(t_base_cpu, overhead_cpu, N, speedup=2.0)
+    plot_results(N, seq_cpu_2, par_cpu_2, 'CPU 2 ядра: последовательное и параллельное', 'cpu_2core.png')
+
+    # 1 ядро Disk
+    seq_disk_1, par_disk_1 = model_times(t_base_disk, overhead_disk, N, speedup=1.1)
+    plot_results(N, seq_disk_1, par_disk_1, 'Disk 1 ядро: последовательное и параллельное', 'disk_1core.png')
+
+    # 2 ядра Disk
+    seq_disk_2, par_disk_2 = model_times(t_base_disk, overhead_disk, N, speedup=1.5)
+    plot_results(N, seq_disk_2, par_disk_2, 'Disk 2 ядра: последовательное и параллельное', 'disk_2core.png')
 
 if __name__ == "__main__":
     main()
