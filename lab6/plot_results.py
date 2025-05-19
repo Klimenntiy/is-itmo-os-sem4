@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 
-def read_results(prefix, mode):
+def read_results(folder, mode):
     means = []
     for n in range(1, 21):
         try:
-            with open(f"{prefix}_{mode}_{n}.txt") as f:
+            with open(f"{folder}/{mode}_{n}.txt") as f:
                 times = [float(line.strip()) for line in f.readlines()]
                 means.append(sum(times) / len(times))
         except FileNotFoundError:
@@ -12,10 +12,11 @@ def read_results(prefix, mode):
     return means
 
 x = list(range(1, 21))
-cpu_seq = read_results("results", "seq")
-cpu_par = read_results("results", "par")
-disk_seq = read_results("results_disk", "seq")
-disk_par = read_results("results_disk", "par")
+
+cpu_seq = read_results("CPU", "seq")
+cpu_par = read_results("CPU", "par")
+disk_seq = read_results("Disk", "seq")
+disk_par = read_results("Disk", "par")
 
 plt.figure(figsize=(12, 8))
 plt.plot(x, cpu_seq, label="CPU Sequential")
