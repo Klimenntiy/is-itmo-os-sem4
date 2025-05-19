@@ -1,42 +1,7 @@
 #!/bin/bash
 
-./measure.sh 1 seq
-./measure.sh 1 par
-./measure.sh 2 seq
-./measure.sh 2 par
-./measure.sh 3 seq
-./measure.sh 3 par
-./measure.sh 4 seq
-./measure.sh 4 par
-./measure.sh 5 seq
-./measure.sh 5 par
-./measure.sh 6 seq
-./measure.sh 6 par
-./measure.sh 7 seq
-./measure.sh 7 par
-./measure.sh 8 seq
-./measure.sh 8 par
-./measure.sh 9 seq
-./measure.sh 9 par
-./measure.sh 10 seq
-./measure.sh 10 par
-./measure.sh 11 seq
-./measure.sh 11 par
-./measure.sh 12 seq
-./measure.sh 12 par
-./measure.sh 13 seq
-./measure.sh 13 par
-./measure.sh 14 seq
-./measure.sh 14 par
-./measure.sh 15 seq
-./measure.sh 15 par
-./measure.sh 16 seq
-./measure.sh 16 par
-./measure.sh 17 seq
-./measure.sh 17 par
-./measure.sh 18 seq
-./measure.sh 18 par
-./measure.sh 19 seq
-./measure.sh 19 par
-./measure.sh 20 seq
-./measure.sh 20 par
+for i in {1..20}
+do
+  ./measure.sh "$i" seq
+  ./measure.sh "$i" par
+done
