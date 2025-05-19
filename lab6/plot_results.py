@@ -1,56 +1,59 @@
 import matplotlib.pyplot as plt
 import os
+import re
 
-def read_results(directory, prefix, mode):
-    means = []
-    for n in range(1, 21):
-        path = os.path.join(directory, f"{prefix}_{mode}_{n}.txt")
-        if os.path.exists(path):
-            with open(path) as f:
-                times = [float(line.strip()) for line in f if line.strip()]
-                means.append(sum(times) / len(times) if times else 0)
-        else:
-            means.append(0)
-    return means
+def read_times(folder, mode):
+    times = []
+    # Ищем файлы вида *seq_1.txt ... *seq_20.txt или *par_1.txt ... *par_20.txt
+    pattern = re.compile(rf".*_{mode}_(\d+)\.txt$")
+    for i in range(1, 21):
+        file_found = False
+        for filename in os.listdir(folder):
+            match = pattern.match(filename)
+            if match and int(match.group(1)) == i:
+                filepath = os.path.join(folder, filename)
+                with open(filepath) as f:
+                    vals = [float(line.strip()) for line in f if line.strip()]
+                    avg = sum(vals) / len(vals) if vals else 0
+                    times.append(avg)
+                file_found = True
+                break
+        if not file_found:
+            print(f"Warning: файл для {mode} с номером {i} не найден")
+            times.append(0)
+    return times
 
-def plot_results(x, seq_data, par_data, title, filename, label_prefix):
-    plt.figure(figsize=(10, 6))
-    plt.plot(x, seq_data, label=f"{label_prefix} Sequential", marker='o')
-    plt.plot(x, par_data, label=f"{label_prefix} Parallel", marker='x')
-    plt.title(title)
-    plt.xlabel("N (tasks/files)")
-    plt.ylabel("Average Time (s)")
+def plot_two_graphs(x, seq_data, par_data, folder):
+    plt.figure(figsize=(10,5))
+    plt.plot(x, seq_data, marker='o')
+    plt.title(f"Sequential Execution Time\nПапка: {folder}")
+    plt.xlabel("N (число задач)")
+    plt.ylabel("Среднее время (с)")
     plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(filename)
+    plt.savefig(f"{folder}_sequential.png")
+    plt.show()
+
+    plt.figure(figsize=(10,5))
+    plt.plot(x, par_data, marker='o', color='orange')
+    plt.title(f"Parallel Execution Time\nПапка: {folder}")
+    plt.xlabel("N (число задач)")
+    plt.ylabel("Среднее время (с)")
+    plt.grid(True)
+    plt.savefig(f"{folder}_parallel.png")
     plt.show()
 
 def main():
-    core_choice = input("Выберите режим (1 - одно ядро, 2 - два ядра): ").strip()
-    type_choice = input("Выберите тип задач (cpu / disk): ").strip().lower()
+    folder = input("Введите имя папки с результатами: ").strip()
 
-    if core_choice not in ("1", "2") or type_choice not in ("cpu", "disk"):
-        print("❌ Неверный выбор. Попробуйте снова.")
+    if not os.path.isdir(folder):
+        print("Ошибка: такой папки нет!")
         return
 
     x = list(range(1, 21))
+    seq = read_times(folder, "seq")
+    par = read_times(folder, "par")
 
-    if core_choice == "1":
-        directory = "CPU" if type_choice == "cpu" else "Disk"
-    else:
-        directory = "CPU_2CPU" if type_choice == "cpu" else "Disk_2CPU"
-
-    prefix = "results" if type_choice == "cpu" else "results_disk"
-
-    seq = read_results(directory, prefix, "seq")
-    par = read_results(directory, prefix, "par")
-
-    title = f"{type_choice.upper()} Tasks ({core_choice} Core{'s' if core_choice == '2' else ''})"
-    filename = f"{type_choice}_{core_choice}core.png"
-    label_prefix = type_choice.upper()
-
-    plot_results(x, seq, par, title, filename, label_prefix)
+    plot_two_graphs(x, seq, par, folder)
 
 if __name__ == "__main__":
     main()
